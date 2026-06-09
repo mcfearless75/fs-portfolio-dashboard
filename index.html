@@ -86,7 +86,8 @@
   .epic-table td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
   .epic-table tr:last-child td{border-bottom:none}
   .epic-table tr:hover td{background:var(--surface2)}
-  .epic-id{font-family:monospace;font-size:11px;color:var(--blue);font-weight:600;background:var(--blue-dim);padding:2px 7px;border-radius:4px}
+  .epic-id{font-family:monospace;font-size:11px;color:var(--blue);font-weight:600;background:var(--blue-dim);padding:2px 7px;border-radius:4px;text-decoration:none;cursor:pointer;transition:opacity .15s}
+  .epic-id:hover{opacity:.75}
   .epic-name{font-weight:500;font-size:13px;color:var(--text)}
   .epic-owner{font-size:11px;color:var(--text2)}
   .progress-bar-wrap{background:var(--border);border-radius:4px;height:6px;width:120px;overflow:hidden}
@@ -169,6 +170,7 @@
 const { useState, useEffect, useCallback } = React;
 
 // ─── LIVE DATA ────────────────────────────────────────────────────────────────
+const LAST_JIRA_SYNC = null; // auto-updated by GitHub Actions
 const TODAY = new Date();
 
 function daysSince(dateStr) {
@@ -387,7 +389,7 @@ function TabPortfolio() {
                     style={{ cursor: 'pointer' }}
                     onClick={() => setExpanded(expanded === epic.id ? null : epic.id)}
                   >
-                    <td><span className="epic-id">{epic.id}</span></td>
+                    <td><a className="epic-id" href={`https://theverygroup.atlassian.net/browse/${epic.id}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>{epic.id}</a></td>
                     <td>
                       <div className="epic-name">{epic.name}</div>
                       <div className="epic-owner">{epic.owner}</div>
@@ -491,9 +493,17 @@ function TabDependencies() {
         <div className="dep-grid">
           {DEPENDENCIES.map((dep, i) => (
             <div key={i} className="dep-row">
-              <span className="dep-from">{dep.from}</span>
+              <span className="dep-from">
+                {dep.from.startsWith('DPD-')
+                  ? <a className="epic-id" href={`https://theverygroup.atlassian.net/browse/${dep.from}`} target="_blank" rel="noopener noreferrer">{dep.from}</a>
+                  : dep.from}
+              </span>
               <span className="dep-arrow">→</span>
-              <span className="dep-to">{dep.to}</span>
+              <span className="dep-to">
+                {dep.to.startsWith('DPD-')
+                  ? <a className="epic-id" href={`https://theverygroup.atlassian.net/browse/${dep.to}`} target="_blank" rel="noopener noreferrer">{dep.to}</a>
+                  : dep.to}
+              </span>
               <span className={`dep-type ${dep.type}`}>{dep.type.toUpperCase()}</span>
               <span style={{ fontSize: '11px', color: 'var(--text3)', marginLeft: 'auto', maxWidth: '280px', textAlign: 'right' }}>{dep.label}</span>
             </div>
@@ -662,7 +672,7 @@ Keep it concise, factual, and senior-stakeholder friendly. Use UK English. No fl
             const rag = calcRAG(e.lastUpdated, e.nextMilestone);
             return (
               <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '12px' }}>
-                <span className="epic-id">{e.id}</span>
+                <a className="epic-id" href={`https://theverygroup.atlassian.net/browse/${e.id}`} target="_blank" rel="noopener noreferrer">{e.id}</a>
                 <span style={{ flex: 1 }}>{e.name}</span>
                 <RagBadge rag={rag} />
                 <span style={{ color: 'var(--text3)', minWidth: '40px' }}>{e.progress}%</span>
@@ -798,6 +808,17 @@ function App() {
           <span className="last-updated">
             🕐 {TODAY.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}
           </span>
+          {LAST_JIRA_SYNC && (() => {
+            const syncDate = new Date(LAST_JIRA_SYNC);
+            const syncedToday = syncDate.toDateString() === TODAY.toDateString();
+            const syncLabel = syncDate.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+            return (
+              <span className={`rag ${syncedToday ? 'green' : 'amber'}`} title={`Last Jira sync: ${LAST_JIRA_SYNC}`}>
+                <span className="rag-dot"></span>
+                Jira {syncedToday ? `synced ${syncLabel}` : `synced ${syncDate.toLocaleDateString('en-GB', {day:'2-digit',month:'short'})}`}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
