@@ -90,6 +90,16 @@
   .epic-id:hover{opacity:.75}
   .epic-name{font-weight:500;font-size:13px;color:var(--text)}
   .epic-owner{font-size:11px;color:var(--text2)}
+  /* ── RAG sparkline ── */
+  .sparkline{display:flex;gap:3px;align-items:center}
+  .spark-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:transform .1s}
+  .spark-dot:hover{transform:scale(1.4)}
+  .spark-dot.green{background:var(--green)}
+  .spark-dot.amber{background:var(--amber)}
+  .spark-dot.red{background:var(--red)}
+  .spark-dot.empty{background:var(--border);opacity:.4}
+  .spark-arrow{font-size:9px;color:var(--text3);margin:0 1px}
+
   .progress-bar-wrap{background:var(--border);border-radius:4px;height:6px;width:120px;overflow:hidden}
   .progress-bar-fill{height:100%;border-radius:4px;transition:width .3s}
 
@@ -326,6 +336,62 @@ function ProgressBar({ pct, rag }) {
   );
 }
 
+// ─── RAG SPARKLINE ────────────────────────────────────────────────────────────
+const HISTORY_KEY = 'fs_rag_history';
+const HISTORY_SLOTS = 8;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function recordTodayRAG(epics) {
+  const today = TODAY.toISOString().slice(0, 10);
+  const stored = loadHistory();
+  let changed = false;
+  epics.forEach(e => {
+    const rag = calcRAG(e.lastUpdated, e.nextMilestone);
+    const hist = stored[e.id] || [];
+    const todayIdx = hist.findIndex(h => h.date === today);
+    if (todayIdx === -1) {
+      hist.push({ rag, date: today });
+      changed = true;
+    } else if (hist[todayIdx].rag !== rag) {
+      hist[todayIdx].rag = rag;
+      changed = true;
+    }
+    stored[e.id] = hist.slice(-HISTORY_SLOTS);
+  });
+  if (changed) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(stored)); }
+    catch {}
+  }
+  return stored;
+}
+
+function RagSparkline({ history = [] }) {
+  const slots = Array.from({ length: HISTORY_SLOTS }, (_, i) => {
+    const offset = i - (HISTORY_SLOTS - history.length);
+    return offset >= 0 ? history[offset] : null;
+  });
+  if (history.length === 0) return (
+    <div className="sparkline" title="No history yet — builds up daily">
+      {slots.map((_, i) => <div key={i} className="spark-dot empty" />)}
+    </div>
+  );
+  return (
+    <div className="sparkline">
+      {slots.map((entry, i) => (
+        <div
+          key={i}
+          className={`spark-dot ${entry ? entry.rag : 'empty'}`}
+          title={entry ? `${entry.rag.toUpperCase()} — ${entry.date}` : ''}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── TAB: PORTFOLIO HEALTH ────────────────────────────────────────────────────
 function TabPortfolio() {
   const epicsWithRAG = EPICS.map(e => ({ ...e, rag: calcRAG(e.lastUpdated, e.nextMilestone) }));
@@ -336,6 +402,12 @@ function TabPortfolio() {
   const blocked = EPICS.flatMap(e => e.decisions).filter(d => d.status === 'blocked').length;
 
   const [expanded, setExpanded] = useState(null);
+  const [ragHistory, setRagHistory] = useState(() => loadHistory());
+
+  useEffect(() => {
+    const updated = recordTodayRAG(EPICS);
+    setRagHistory(updated);
+  }, []);
 
   return (
     <div className="page section-gap">
@@ -376,6 +448,7 @@ function TabPortfolio() {
                 <th>Epic</th>
                 <th>Name</th>
                 <th>RAG</th>
+                <th>Trend</th>
                 <th>Progress</th>
                 <th>Next Milestone</th>
                 <th>Status</th>
@@ -395,6 +468,7 @@ function TabPortfolio() {
                       <div className="epic-owner">{epic.owner}</div>
                     </td>
                     <td><RagBadge rag={epic.rag} /></td>
+                    <td><RagSparkline history={ragHistory[epic.id] || []} /></td>
                     <td>
                       <div className="row-gap" style={{ gap: '8px' }}>
                         <ProgressBar pct={epic.progress} rag={epic.rag} />
@@ -416,7 +490,7 @@ function TabPortfolio() {
                   </tr>
                   {expanded === epic.id && (
                     <tr>
-                      <td colSpan={7} style={{ padding: 0 }}>
+                      <td colSpan={8} style={{ padding: 0 }}>
                         <div style={{ background: 'var(--surface2)', padding: '16px', borderLeft: `3px solid var(--${epic.rag === 'green' ? 'green' : epic.rag === 'amber' ? 'amber' : 'red'})` }}>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div>
