@@ -90,7 +90,26 @@
   .epic-id:hover{opacity:.75}
   .epic-name{font-weight:500;font-size:13px;color:var(--text)}
   .epic-owner{font-size:11px;color:var(--text2)}
-  /* ── RAG sparkline ── */
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:82vh;display:flex;flex-direction:column}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .modal-body{padding:20px;overflow-y:auto;flex:1;white-space:pre-wrap;font-size:13px;color:var(--text);line-height:1.7}
+  .modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+  .modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:0;line-height:1}
+  .modal-close:hover{color:var(--text)}
+  /* ── Settings ── */
+  .settings-btn{cursor:pointer;font-size:15px;color:var(--text3);padding:4px 8px;border-radius:6px;background:none;border:none;transition:color .15s;display:flex;align-items:center;gap:4px}
+  .settings-btn:hover{color:var(--text)}
+  .key-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
+  .input-field{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:12px;font-family:monospace;outline:none;transition:border .15s}
+  .input-field:focus{border-color:var(--blue)}
+  .input-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+  /* ── Chase button ── */
+  .btn-chase{font-size:10px;padding:2px 8px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+  .btn-chase:hover{color:var(--blue);border-color:var(--blue)}
+  /* ── Report ── */
+  .report-print-area{font-size:12px;color:var(--text);line-height:1.75;white-space:pre-wrap}
   .sparkline{display:flex;gap:3px;align-items:center}
   .spark-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:transform .1s}
   .spark-dot:hover{transform:scale(1.4)}
@@ -336,6 +355,94 @@ function ProgressBar({ pct, rag }) {
   );
 }
 
+// ─── CLAUDE API HELPERS ──────────────────────────────────────────────────────
+function getClaudeKey() {
+  return localStorage.getItem('fs_claude_key') || '';
+}
+
+async function callClaude(prompt, maxTokens = 1500) {
+  const key = getClaudeKey();
+  if (!key) throw new Error('No API key set — click ⚙ in the top bar to add your key.');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.content?.map(b => b.text || '').join('') || '';
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function Modal({ title, children, footer, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2 style={{ fontSize: '14px', fontWeight: 600 }}>{title}</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS MODAL ──────────────────────────────────────────────────────────
+function SettingsModal({ onClose, onSaved }) {
+  const [val, setVal] = useState(getClaudeKey());
+  const save = () => {
+    if (val.trim()) localStorage.setItem('fs_claude_key', val.trim());
+    else localStorage.removeItem('fs_claude_key');
+    onSaved();
+    onClose();
+  };
+  return (
+    <Modal
+      title="⚙ Dashboard Settings"
+      onClose={onClose}
+      footer={<>
+        <button className="btn btn-primary" onClick={save}>Save</button>
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      </>}
+    >
+      <div style={{ marginBottom: 20 }}>
+        <label className="input-label">Claude API Key</label>
+        <input
+          className="input-field"
+          type="password"
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          placeholder="sk-ant-api03-..."
+          autoComplete="off"
+        />
+        <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: 8, lineHeight: 1.6 }}>
+          Stored in your browser only — never sent anywhere except Anthropic's API.<br/>
+          Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue)' }}>console.anthropic.com</a>
+        </div>
+      </div>
+      <div style={{ background: 'var(--surface2)', borderRadius: 'var(--radius)', padding: 14, fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
+        <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 6 }}>Also add to GitHub Secrets for automated reports:</strong>
+        Settings → Secrets and variables → Actions → New secret<br/>
+        Name: <code style={{ color: 'var(--blue)', fontFamily: 'monospace' }}>ANTHROPIC_API_KEY</code><br/>
+        Value: your key above
+      </div>
+    </Modal>
+  );
+}
+
 // ─── RAG SPARKLINE ────────────────────────────────────────────────────────────
 const HISTORY_KEY = 'fs_rag_history';
 const HISTORY_SLOTS = 8;
@@ -402,6 +509,29 @@ function TabPortfolio() {
   const blocked = EPICS.flatMap(e => e.decisions).filter(d => d.status === 'blocked').length;
 
   const [expanded, setExpanded] = useState(null);
+  const [chaseModal, setChaseModal] = useState(null);
+  const [chaseLoading, setChaseLoading] = useState(null);
+
+  const draftChase = async (epicId, decision) => {
+    setChaseLoading(`${epicId}-${decision.text}`);
+    const epic = EPICS.find(e => e.id === epicId);
+    const prompt = `You are Paul McWilliam, Programme Manager at The Very Group, Data Demand Programme, Financial Services tribe.
+
+Draft a brief, professional chase email to ${decision.owner} regarding the following outstanding decision:
+
+Epic: ${epicId} — ${epic?.name}
+Decision needed: ${decision.text}
+Due: ${decision.date}
+
+Write a polite but firm 4-6 sentence chase email. Use UK English. Do not use filler phrases like "I hope this finds you well". Start with the context, state what's needed, explain the impact of delay, and give a clear call to action with a deadline. Sign off as Paul McWilliam, Programme Manager — Data Demand FS.`;
+    try {
+      const text = await callClaude(prompt, 500);
+      setChaseModal({ title: `Chase email — ${decision.text.slice(0, 50)}…`, text, owner: decision.owner });
+    } catch(e) {
+      alert(`Could not generate chase email: ${e.message}`);
+    } finally { setChaseLoading(null); }
+  };
+
   const [ragHistory, setRagHistory] = useState(() => loadHistory());
 
   useEffect(() => {
@@ -411,6 +541,19 @@ function TabPortfolio() {
 
   return (
     <div className="page section-gap">
+      {chaseModal && (
+        <Modal
+          title={chaseModal.title}
+          onClose={() => setChaseModal(null)}
+          footer={<>
+            <button className="btn btn-primary" onClick={() => navigator.clipboard.writeText(chaseModal.text)}>📋 Copy email</button>
+            <button className="btn btn-secondary" onClick={() => setChaseModal(null)}>Close</button>
+          </>}
+        >
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>To: {chaseModal.owner}</div>
+          <div className="report-print-area">{chaseModal.text}</div>
+        </Modal>
+      )}
       {/* KPI Row */}
       <div className="grid-4">
         <div className={`kpi ${reds > 0 ? 'red' : 'green'}`}>
@@ -503,10 +646,19 @@ function TabPortfolio() {
                                 {epic.decisions.map((d, i) => (
                                   <div key={i} className="decision-row">
                                     <div className={`decision-dot ${d.status}`}></div>
-                                    <div>
+                                    <div style={{ flex: 1 }}>
                                       <div className="decision-text">{d.text}</div>
                                       <div className="decision-meta">{d.date} · {d.owner}</div>
                                     </div>
+                                    {d.status === 'open' && (
+                                      <button
+                                        className="btn-chase"
+                                        onClick={e => { e.stopPropagation(); draftChase(epic.id, d); }}
+                                        disabled={chaseLoading === `${epic.id}-${d.text}`}
+                                      >
+                                        {chaseLoading === `${epic.id}-${d.text}` ? '…' : 'Chase →'}
+                                      </button>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -615,23 +767,28 @@ function TabDependencies() {
   );
 }
 
-// ─── TAB: WEEKLY DRAFT ────────────────────────────────────────────────────────
+// ─── TAB: WEEKLY DRAFT + REPORTS ─────────────────────────────────────────────
 function TabWeeklyDraft() {
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+  const [reportModal, setReportModal] = useState(null); // { title, text }
+  const [reportLoading, setReportLoading] = useState(false);
 
-  const buildPrompt = () => {
-    const epicsWithRAG = EPICS.map(e => ({ ...e, rag: calcRAG(e.lastUpdated, e.nextMilestone) }));
-    const lines = epicsWithRAG.map(e =>
-      `- ${e.id} (${e.name}): ${e.rag.toUpperCase()} · ${e.progress}% · Next: ${e.milestoneLabel} in ${daysUntil(e.nextMilestone)}d · Open decisions: ${e.decisions.filter(d=>d.status==='open').length}`
-    ).join('\n');
-    const decisions = EPICS.flatMap(e => e.decisions.filter(d => d.status === 'open').map(d => `  • [${e.id}] ${d.text} — ${d.date}`)).join('\n');
-    const blockers = EPICS.flatMap(e => e.decisions.filter(d => d.status === 'blocked').map(d => `  • [${e.id}] ${d.text}`)).join('\n');
+  const epicsSnap = () => {
+    const r = EPICS.map(e => ({ ...e, rag: calcRAG(e.lastUpdated, e.nextMilestone) }));
+    const lines = r.map(e => `- ${e.id} (${e.name}): ${e.rag.toUpperCase()} · ${e.progress}% · Next: ${e.milestoneLabel} in ${daysUntil(e.nextMilestone)}d · Decisions open: ${e.decisions.filter(d=>d.status==='open').length}`).join('\n');
+    const decisions = EPICS.flatMap(e => e.decisions.filter(d=>d.status==='open').map(d=>`  • [${e.id}] ${d.text} — ${d.date} (${d.owner})`)).join('\n');
+    const blockers  = EPICS.flatMap(e => e.decisions.filter(d=>d.status==='blocked').map(d=>`  • [${e.id}] ${d.text}`)).join('\n');
+    return { lines, decisions, blockers, r };
+  };
 
-    return `You are a programme manager at The Very Group, Financial Services tribe, writing a concise weekly status update for senior stakeholders and the SteerCo.
+  const generateDraft = async () => {
+    setLoading(true); setDraft(''); setError('');
+    const { lines, decisions, blockers } = epicsSnap();
+    const prompt = `You are a programme manager at The Very Group, Financial Services tribe, writing a concise weekly status update for senior stakeholders and the SteerCo.
 
 Today's date: ${TODAY.toLocaleDateString('en-GB')}
 Programme: Data Demand Programme — FS Tribe
@@ -656,72 +813,120 @@ Write a professional weekly status update in this structure:
 5. NEXT WEEK FOCUS (top 3 priorities)
 
 Keep it concise, factual, and senior-stakeholder friendly. Use UK English. No fluff.`;
-  };
-
-  const generateDraft = async () => {
-    setLoading(true);
-    setDraft('');
-    setError('');
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: buildPrompt() }]
-        })
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${response.status}`);
-      }
-      const data = await response.json();
-      const text = data.content?.map(b => b.text || '').join('') || '';
-      setDraft(text);
-    } catch (e) {
-      setError(`⚠️ ${e.message}\n\nNote: The API call must be made from claude.ai where authentication is handled automatically.`);
-    } finally {
-      setLoading(false);
-    }
+      setDraft(await callClaude(prompt, 1000));
+    } catch(e) {
+      setError(`⚠️ ${e.message}`);
+    } finally { setLoading(false); }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(draft).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  const generateSteerCoReport = async () => {
+    setReportLoading(true);
+    const { lines, decisions, blockers, r } = epicsSnap();
+    const ragSummary = `RED: ${r.filter(e=>e.rag==='red').length} | AMBER: ${r.filter(e=>e.rag==='amber').length} | GREEN: ${r.filter(e=>e.rag==='green').length}`;
+    const prompt = `You are a programme manager at The Very Group preparing a formal SteerCo status report for the Data Demand Programme, Financial Services tribe.
+
+Date: ${TODAY.toLocaleDateString('en-GB')}
+Overall RAG: ${ragSummary}
+
+EPIC STATUS:
+${lines}
+
+OPEN DECISIONS:
+${decisions || 'None'}
+
+BLOCKERS:
+${blockers || 'None'}
+
+Write a formal SteerCo report with these sections — use clear headings, professional language, UK English:
+
+## Programme Status Report — Data Demand FS
+**Date:** ${TODAY.toLocaleDateString('en-GB')}  **Period:** Week ending ${TODAY.toLocaleDateString('en-GB')}  **Prepared by:** Paul McWilliam
+
+## Executive Summary
+(2-3 sentences: overall health, key message, any escalation needed)
+
+## Epic Status Overview
+(Table-style summary: Epic | Status | Progress | Next Milestone | RAG)
+
+## Decisions Required from SteerCo
+(Numbered list — each with what's needed, owner, deadline, and impact if delayed)
+
+## Blockers and Risks
+(Any hard blockers or emerging risks)
+
+## Achievements This Period
+(What's been completed or progressed significantly)
+
+## Next Period Focus
+(Top 3 priorities for the coming week)
+
+## Appendix: Decision Log
+(All open decisions with owner and due date)
+
+Be specific, factual, and escalation-ready. No filler. ~400 words.`;
+    try {
+      const text = await callClaude(prompt, 2000);
+      setReportModal({ title: `SteerCo Report — ${TODAY.toLocaleDateString('en-GB')}`, text });
+    } catch(e) {
+      setError(`⚠️ ${e.message}`);
+    } finally { setReportLoading(false); }
   };
+
+  const copyText = (text) => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  const printReport = () => { window.print(); };
 
   return (
     <div className="page section-gap">
+      {reportModal && (
+        <Modal
+          title={reportModal.title}
+          onClose={() => setReportModal(null)}
+          footer={<>
+            <button className="btn btn-primary" onClick={() => copyText(reportModal.text)}>📋 Copy</button>
+            <button className="btn btn-secondary" onClick={printReport}>🖨 Print / Save PDF</button>
+            <button className="btn btn-secondary" onClick={() => setReportModal(null)}>Close</button>
+          </>}
+        >
+          <div className="report-print-area">{reportModal.text}</div>
+        </Modal>
+      )}
+
       <div className="card">
         <div className="card-header">
-          <h2>Weekly Status Draft Generator</h2>
-          <span className="chip">Powered by Claude AI</span>
+          <h2>Weekly Status Draft</h2>
+          <span className="chip">For Confluence / email</span>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '16px', lineHeight: 1.7 }}>
-          Generates a senior-stakeholder weekly status update from live epic data, open decisions, and blockers.
-          Add any additional context below before generating.
+        <p style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: 16, lineHeight: 1.7 }}>
+          Generates a senior-stakeholder status update from live epic data. Add any context first.
         </p>
-        <div style={{ marginBottom: '12px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text2)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '.5px' }}>
-            Additional Context (optional)
-          </label>
+        <div style={{ marginBottom: 12 }}>
+          <label className="input-label">Additional context (optional)</label>
           <textarea
             className="textarea-field"
-            placeholder="e.g. Finance confirmed FY27 budget uplift this week. Architecture board moved to 21 Jun. Key stakeholder holiday next week..."
+            placeholder="e.g. Finance confirmed FY27 budget uplift. Architecture board moved to 21 Jun…"
             value={additionalContext}
             onChange={e => setAdditionalContext(e.target.value)}
           />
         </div>
         <div className="btn-group">
           <button className="btn btn-primary" onClick={generateDraft} disabled={loading}>
-            {loading ? <span className="loading-pulse">⚡ Generating…</span> : '⚡ Generate Draft'}
+            {loading ? <span className="loading-pulse">⚡ Generating…</span> : '⚡ Generate Weekly Draft'}
+          </button>
+          <button className="btn btn-secondary" onClick={generateSteerCoReport} disabled={reportLoading} style={{ borderColor: 'var(--purple)', color: 'var(--purple)' }}>
+            {reportLoading ? <span className="loading-pulse">📄 Building…</span> : '📄 Generate SteerCo Report'}
           </button>
           {draft && (
-            <button className="btn btn-secondary copy-btn" onClick={copyToClipboard}>
+            <button className="btn btn-secondary copy-btn" onClick={() => copyText(draft)}>
               {copied ? '✓ Copied!' : '📋 Copy'}
             </button>
           )}
         </div>
+        {!getClaudeKey() && (
+          <div style={{ marginTop: 10, fontSize: 11, color: 'var(--amber)' }}>
+            ⚠️ No API key set — click ⚙ in the top bar to add your key.
+          </div>
+        )}
       </div>
 
       {(draft || error || loading) && (
@@ -731,26 +936,25 @@ Keep it concise, factual, and senior-stakeholder friendly. Use UK English. No fl
             {draft && <span className="rag green"><span className="rag-dot"></span>Ready</span>}
           </div>
           <div className="draft-area">
-            {loading && <span className="loading-pulse" style={{ color: 'var(--text3)' }}>Claude is drafting your weekly status update…</span>}
+            {loading && <span className="loading-pulse" style={{ color: 'var(--text3)' }}>Drafting…</span>}
             {error && <span style={{ color: 'var(--red)' }}>{error}</span>}
-            {draft && draft}
+            {draft}
           </div>
         </div>
       )}
 
-      {/* Epic data preview */}
       <div className="card">
-        <div className="card-header"><h2>Data Being Used</h2><span style={{ fontSize: '11px', color: 'var(--text3)' }}>Live from dashboard state</span></div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="card-header"><h2>Data snapshot</h2><span style={{ fontSize: 11, color: 'var(--text3)' }}>Live from dashboard</span></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {EPICS.map(e => {
             const rag = calcRAG(e.lastUpdated, e.nextMilestone);
             return (
-              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '12px' }}>
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 12 }}>
                 <a className="epic-id" href={`https://theverygroup.atlassian.net/browse/${e.id}`} target="_blank" rel="noopener noreferrer">{e.id}</a>
                 <span style={{ flex: 1 }}>{e.name}</span>
                 <RagBadge rag={rag} />
-                <span style={{ color: 'var(--text3)', minWidth: '40px' }}>{e.progress}%</span>
-                <span style={{ color: 'var(--text3)', minWidth: '60px' }}>Due {daysUntil(e.nextMilestone)}d</span>
+                <span style={{ color: 'var(--text3)', minWidth: 40 }}>{e.progress}%</span>
+                <span style={{ color: 'var(--text3)', minWidth: 60 }}>Due {daysUntil(e.nextMilestone)}d</span>
               </div>
             );
           })}
@@ -759,6 +963,14 @@ Keep it concise, factual, and senior-stakeholder friendly. Use UK English. No fl
     </div>
   );
 }
+
+  const buildPrompt = () => {
+    const epicsWithRAG = EPICS.map(e => ({ ...e, rag: calcRAG(e.lastUpdated, e.nextMilestone) }));
+    const lines = epicsWithRAG.map(e =>
+      `- ${e.id} (${e.name}): ${e.rag.toUpperCase()} · ${e.progress}% · Next: ${e.milestoneLabel} in ${daysUntil(e.nextMilestone)}d · Open decisions: ${e.decisions.filter(d=>d.status==='open').length}`
+    ).join('\n');
+    const decisions = EPICS.flatMap(e => e.decisions.filter(d => d.status === 'open').map(d => `  • [${e.id}] ${d.text} — ${d.date}`)).join('\n');
+    const blockers = EPICS.flatMap(e => e.decisions.filter(d => d.status === 'blocked').map(d => `  • [${e.id}] ${d.text}`)).join('\n');
 
 // ─── TAB: AUTOMATIONS ────────────────────────────────────────────────────────
 function TabAutomations() {
@@ -851,6 +1063,8 @@ const TABS = [
 
 function App() {
   const [activeTab, setActiveTab] = useState('portfolio');
+  const [showSettings, setShowSettings] = useState(false);
+  const [hasKey, setHasKey] = useState(!!getClaudeKey());
 
   const epicsWithRAG = EPICS.map(e => ({ ...e, rag: calcRAG(e.lastUpdated, e.nextMilestone) }));
   const redCount = epicsWithRAG.filter(e => e.rag === 'red').length;
@@ -858,6 +1072,7 @@ function App() {
 
   return (
     <div className="app">
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} onSaved={() => setHasKey(!!getClaudeKey())} />}
       <div className="topbar">
         <div className="topbar-left">
           <div className="logo-badge">FS</div>
@@ -893,6 +1108,9 @@ function App() {
               </span>
             );
           })()}
+          <button className="settings-btn" onClick={() => setShowSettings(true)} title="Settings">
+            ⚙{hasKey && <span className="key-dot" title="Claude API key set" />}
+          </button>
         </div>
       </div>
 

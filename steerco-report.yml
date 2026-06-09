@@ -1,0 +1,60 @@
+name: Friday SteerCo Report
+
+on:
+  schedule:
+    # 16:00 BST (15:00 UTC) every Friday
+    - cron: '0 15 * * 5'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — generate but do not commit'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    name: Generate SteerCo report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - run: pip install anthropic requests
+
+      - name: Generate report
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EMAIL_TO: ${{ secrets.DIGEST_EMAIL_TO }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          REPORT_MODE: steerco
+        run: python .github/scripts/gen_reports.py
+
+      - name: Commit report
+        if: inputs.dry_run != true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/ || true
+          git diff --staged --quiet || git commit -m "report: SteerCo $(date -u '+%Y-%m-%d') [skip ci]"
+          git push || true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### SteerCo Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f .github/report_result.md ]; then cat .github/report_result.md >> $GITHUB_STEP_SUMMARY; fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Dashboard:** https://mcfearless75.github.io/fs-portfolio-dashboard/" >> $GITHUB_STEP_SUMMARY
