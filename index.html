@@ -233,95 +233,121 @@ function calcRAG(lastUpdated, nextMilestone) {
 const EPICS = [
   {
     id: 'DPD-757',
-    name: 'Data Demand Request Intake & Triage',
+    name: 'Debt Manager Replacement — Data Work (Flexys)',
     owner: 'Paul McWilliam',
     tribe: 'Financial Services',
-    progress: 65,
-    lastUpdated: '2025-05-20',
-    nextMilestone: '2025-06-20',
-    milestoneLabel: 'UAT Sign-off',
+    progress: 30,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2027-06-30',
+    milestoneLabel: 'Data delivery target (hard deadline Dec 2028)',
     status: 'In Progress',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/RIF8lAE',
     decisions: [
-      { text: 'Agree SLA tiers with FS tribe leads', status: 'open', date: 'Due 16 Jun', owner: 'Paul McWilliam' },
-      { text: 'Confirm Starburst query log retention period', status: 'resolved', date: 'Resolved 3 Jun', owner: 'Data Engineering' },
-      { text: 'Jira workflow approval — escalation path', status: 'open', date: 'Due 23 Jun', owner: 'Governance' },
+      { text: 'Confirm all data required for CT4 decision table in Flexys', status: 'open', date: 'Open', owner: 'Strategy Director WS' },
+      { text: 'Dialler disposition file data flow investigation', status: 'open', date: 'Open', owner: 'Dialler team' },
+      { text: 'Customer portal URL incl. account number — risk acceptance', status: 'resolved', date: 'Resolved 4 Mar', owner: 'InfoSec' },
     ],
-    notes: 'Intake form v3 finalised. Triage logic in Jira automated. Pending SLA sign-off from tribe leads before UAT.',
+    notes: 'Flexys selected after 5-vendor tender. ~250 events to be narrowed to MI-relevant subset for sizing. Shift from ~20 Teradata batch tables to real-time event architecture. £125m cash collected p.a. protected.',
+  },
+  {
+    id: 'DPD-871',
+    name: 'Pay by Bank — Data Work (Tink)',
+    owner: 'Maria Wright',
+    tribe: 'Financial Services',
+    progress: 45,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2026-09-30',
+    milestoneLabel: 'Go-live (pre-peak)',
+    status: 'In Progress',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/mAEBmwE',
+    decisions: [
+      { text: 'TVG status model — Tink to internal status mapping', status: 'open', date: 'Open', owner: 'FS / Data' },
+      { text: 'E2E reconciliation design', status: 'open', date: 'Open — critical', owner: 'Data team' },
+      { text: 'CAM field expansion 18→36 chars — downstream impact', status: 'open', date: 'Open', owner: 'CAM Platform' },
+      { text: 'FS TDA approval (conditional)', status: 'resolved', date: 'Resolved 5 Jun', owner: 'FS TDA' },
+    ],
+    notes: '£971,856 year-one saving (£821,856 ongoing). New Payment Data Store, CAM staging integration, dual-ID model. Phase 1 pay-off-account Sept 2026; Phase 2 BNPL post-peak. Tight timeline across FS, DCX, Data, CuCa.',
   },
   {
     id: 'DPD-754',
-    name: 'Starburst / Trino Query Monitoring Dashboard',
+    name: 'SigmaIQ — FS Personalisation',
     owner: 'Paul McWilliam',
     tribe: 'Financial Services',
-    progress: 40,
-    lastUpdated: '2025-05-10',
-    nextMilestone: '2025-07-04',
-    milestoneLabel: 'Power BI Release',
+    progress: 35,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2026-12-31',
+    milestoneLabel: 'Planning horizon — Smart Basket Day 2',
     status: 'In Progress',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/RIL8mgE',
     decisions: [
-      { text: 'Define threshold alerts for query cost > £500/day', status: 'open', date: 'Due 30 Jun', owner: 'Paul McWilliam' },
-      { text: 'Access permissions for BI team to Starburst metrics', status: 'blocked', date: 'Blocked — infra ticket open', owner: 'Platform' },
+      { text: 'Counterfactual tracking approach (seen vs could have seen)', status: 'open', date: 'Open — unagreed', owner: 'Data / Analytics' },
+      { text: 'Front Door Request (FDR) approval', status: 'open', date: 'Gates delivery', owner: 'FS' },
     ],
-    notes: 'Power BI build spec drafted. Waiting on Starburst metrics API access from Platform team. Infra ticket DPD-888 open.',
+    notes: 'CLI live in production; Basket Day 1 live (no tracking). Smart Offer Basket Day 2 in flight — cross-journey tracking PDP → Basket → downstream. Celebrus framework partially reusable.',
   },
   {
     id: 'DPD-905',
-    name: 'FS Data Catalogue & Lineage Mapping',
+    name: 'Credit Account Engine (CAM → CAE)',
     owner: 'Paul McWilliam',
     tribe: 'Financial Services',
-    progress: 20,
-    lastUpdated: '2025-04-28',
-    nextMilestone: '2025-08-01',
-    milestoneLabel: 'MVP Catalogue Launch',
+    progress: 10,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2026-06-19',
+    milestoneLabel: 'Shaping milestone',
     status: 'At Risk',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/bwEHmwE',
     decisions: [
-      { text: 'Tooling decision: Collibra vs Alation vs build', status: 'open', date: 'Due 14 Jun', owner: 'Architecture' },
-      { text: 'Scope: FS tribe only vs cross-tribe', status: 'open', date: 'Due 21 Jun', owner: 'Paul McWilliam' },
+      { text: 'Data domain ownership during CAM/CAE dual-run', status: 'open', date: 'Open', owner: 'Architecture / Data' },
+      { text: 'CAM PL/SQL specialist resourcing', status: 'open', date: 'Open — resource early', owner: 'CAM Platform' },
     ],
-    notes: 'Stalled pending tooling decision. Architecture review scheduled for 14 Jun. Risk of missing MVP date if decision slips.',
+    notes: 'Phase 2 hybrid transition. CAE becomes system of record for balance/limit — unblocks VPC and Tiered Proposition. Still Pre-Shaping with milestone 9 days out.',
   },
   {
     id: 'DPD-901',
-    name: 'Self-Serve Analytics Enablement (FS)',
+    name: 'Tiered Accounts',
     owner: 'Paul McWilliam',
     tribe: 'Financial Services',
-    progress: 55,
-    lastUpdated: '2025-05-30',
-    nextMilestone: '2025-06-27',
-    milestoneLabel: 'Training Rollout',
-    status: 'On Track',
+    progress: 5,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2026-06-19',
+    milestoneLabel: 'Shaping milestone',
+    status: 'At Risk',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/MAEImwE',
     decisions: [
-      { text: 'Confirm Power BI workspace structure with FS leads', status: 'resolved', date: 'Resolved 28 May', owner: 'Paul McWilliam' },
-      { text: 'Training format: live vs recorded vs hybrid', status: 'open', date: 'Due 16 Jun', owner: 'L&D' },
+      { text: 'Outcome & benefits case definition', status: 'open', date: 'TBC', owner: 'Paul McWilliam' },
+      { text: 'Top-level scope — in/out', status: 'open', date: 'TBC', owner: 'Paul McWilliam' },
+      { text: 'First draft data contract from PU', status: 'open', date: 'Gating item', owner: 'PU' },
     ],
-    notes: '3 Power BI workspaces provisioned. Training materials 70% complete. L&D format decision outstanding.',
+    notes: 'Joined-up tiered Very proposition — multiple VeryPay account types with differentiated Retail/FS benefits. Pre-Shaping; dependent on CAE (DPD-905). Impacts DE, BI, Data Mgmt, Data QA.',
   },
   {
     id: 'DPD-915',
-    name: 'Data Demand FY27 Planning & Governance',
+    name: 'Blaze Replacement — Fraud Decisioning',
     owner: 'Paul McWilliam',
     tribe: 'Financial Services',
-    progress: 80,
-    lastUpdated: '2025-06-02',
-    nextMilestone: '2025-06-13',
-    milestoneLabel: 'SteerCo Presentation',
-    status: 'On Track',
+    progress: 15,
+    lastUpdated: '2026-06-10',
+    nextMilestone: '2026-09-30',
+    milestoneLabel: 'Vendor selection + t-shirt sizing (date TBC)',
+    status: 'In Progress',
+    briefUrl: 'https://theverygroup.atlassian.net/wiki/x/JAEQmwE',
     decisions: [
-      { text: 'FY27 capacity model sign-off with Finance', status: 'open', date: 'Due 11 Jun', owner: 'Finance' },
-      { text: 'Quarterly review cadence agreed', status: 'resolved', date: 'Resolved 2 Jun', owner: 'Paul McWilliam' },
+      { text: 'Vendor selection (SaaS / provider capability)', status: 'open', date: 'In progress', owner: 'Zena Gilbert / Tech' },
+      { text: 'Fraud post-order (Day 1) vs pre-order (future)', status: 'open', date: 'Open', owner: 'Architecture' },
+      { text: 'Engage architect / BA / engineers for deeper validation', status: 'open', date: 'Open', owner: 'Paul McWilliam' },
     ],
-    notes: 'Delivery plan PowerPoint complete. SteerCo deck 80% done. Finance capacity sign-off needed before 13 Jun presentation.',
+    notes: 'Out-of-support Blaze replaced with modern fraud platform. Day 1 like-for-like; parallel-run validation. Data ingestion (Customer, Order, Delivery, Originations) is the heavy lift. Contractor-heavy squad ~12 months.',
   },
 ];
 
 const DEPENDENCIES = [
-  { from: 'DPD-754', to: 'DPD-757', type: 'needs', label: 'Intake data feeds into query monitoring metrics' },
-  { from: 'DPD-905', to: 'Architecture Board', type: 'blocks', label: 'Tooling decision required before catalogue build starts' },
-  { from: 'DPD-901', to: 'DPD-754', type: 'informs', label: 'Self-serve adoption drives query volume baselines' },
-  { from: 'DPD-915', to: 'DPD-757', type: 'informs', label: 'FY27 plan sets intake SLA targets' },
-  { from: 'DPD-915', to: 'DPD-905', type: 'informs', label: 'Governance framework shapes catalogue scope' },
-  { from: 'DPD-754', to: 'Platform Team', type: 'blocks', label: 'Blocked: infra access ticket DPD-888' },
-  { from: 'DPD-901', to: 'L&D Team', type: 'needs', label: 'Training format decision due 16 Jun' },
+  { from: 'DPD-905', to: 'DPD-901', type: 'blocks', label: 'CAE is future source of truth for balance/limit — gates Tiered Accounts' },
+  { from: 'DPD-905', to: 'VPC Programme', type: 'blocks', label: 'VeryPay Card is downstream consumer of CAE capability' },
+  { from: 'New Ledger', to: 'DPD-905', type: 'informs', label: 'CAM decommission timeline affects CAE scope and phasing' },
+  { from: 'New Ledger', to: 'DPD-915', type: 'informs', label: 'Ledger programme timing affects Blaze phasing' },
+  { from: 'DPD-871', to: 'CAM Platform', type: 'needs', label: 'CAM field expansion 18→36 chars for TVG Payment UID' },
+  { from: 'DPD-757', to: 'Flexys', type: 'needs', label: '~250 events to be narrowed to MI-relevant subset for data sizing' },
+  { from: 'DPD-915', to: 'Vendor Selection', type: 'blocks', label: 'Vendor decision gates delivery planning and business case' },
 ];
 
 const AUTOMATIONS = [
@@ -650,6 +676,7 @@ Write a polite but firm 4-6 sentence chase email. Use UK English. Do not use fil
                             <div>
                               <h3 style={{ marginBottom: '8px' }}>Programme Notes</h3>
                               <p style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.7 }}>{epic.notes}</p>
+                              {epic.briefUrl && <p style={{ marginTop: '8px' }}><a className="epic-id" href={epic.briefUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>📄 Data Brief →</a></p>}
                             </div>
                             <div>
                               <h3 style={{ marginBottom: '8px' }}>Decisions & Actions</h3>
@@ -754,22 +781,22 @@ function TabDependencies() {
           <div className="decision-row">
             <div className="decision-dot blocked"></div>
             <div>
-              <div className="decision-text">DPD-754 blocked on Platform infra ticket DPD-888 — no Starburst metrics API access</div>
-              <div className="decision-meta">Raised with Platform lead 2 Jun · Est. resolution 20 Jun</div>
+              <div className="decision-text">DPD-905 (CAE) and DPD-901 (Tiered Accounts) both hit 19 Jun shaping milestones while still in Pre-Shaping</div>
+              <div className="decision-meta">9 days out — force shaping sessions this week or correct dates in Jira</div>
             </div>
           </div>
           <div className="decision-row">
             <div className="decision-dot"></div>
             <div>
-              <div className="decision-text">DPD-905 tooling decision (Architecture Board) gates the entire catalogue build — 6wk impact if delayed</div>
-              <div className="decision-meta">Architecture review 14 Jun · Decision needed same day</div>
+              <div className="decision-text">DPD-871 (Pay by Bank) reconciliation design and TVG status model still open against Sept go-live</div>
+              <div className="decision-meta">Critical data items — pre-peak deadline, no float</div>
             </div>
           </div>
           <div className="decision-row">
             <div className="decision-dot resolved"></div>
             <div>
-              <div className="decision-text">DPD-757 intake forms now feeding DPD-754 monitoring scope — integration point confirmed</div>
-              <div className="decision-meta">Resolved 3 Jun</div>
+              <div className="decision-text">Pay by Bank secured conditional FS TDA approval — technical walkthrough complete (16 attendees)</div>
+              <div className="decision-meta">Resolved 5 Jun</div>
             </div>
           </div>
         </div>
@@ -1039,9 +1066,9 @@ function TabAutomations() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
             { name: 'Jira (Data Demand)', status: 'connected', note: 'Read + comment access' },
-            { name: 'Confluence (FS Tribe)', status: 'connected', note: 'Read + write access' },
-            { name: 'Power BI Workspace', status: 'connected', note: 'Read-only metrics' },
-            { name: 'Starburst / Trino', status: 'partial', note: 'Metrics API pending infra ticket DPD-888' },
+            { name: 'Confluence (FS Hub + Data Briefs)', status: 'connected', note: '7 pages live — front page + 6 briefs' },
+            { name: 'Claude API (drafting)', status: 'partial', note: 'Key set per-browser via ⚙ in top bar' },
+            { name: 'M365 Graph API', status: 'pending', note: 'MSAL device-code flow — in progress' },
             { name: 'Microsoft Teams', status: 'pending', note: 'Not yet configured' },
           ].map((item, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '12px' }}>
